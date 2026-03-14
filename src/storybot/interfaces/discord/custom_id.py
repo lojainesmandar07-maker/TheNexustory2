@@ -53,7 +53,10 @@ class CustomIdCodec:
         if not hmac.compare_digest(supplied, expected):
             raise CustomIdError("Invalid custom_id signature")
 
-        turn = int(turn_part.replace("turn:", "", 1))
+        try:
+            turn = int(turn_part.replace("turn:", "", 1))
+        except ValueError as exc:
+            raise CustomIdError("Invalid turn value in custom_id") from exc
         return ChoiceCustomIdPayload(
             session_id=sid_part.replace("sid:", "", 1),
             turn=turn,

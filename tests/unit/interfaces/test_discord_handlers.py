@@ -1,3 +1,5 @@
+import pytest
+
 from storybot.application.use_cases.story_runtime import StoryRuntime
 from storybot.domain.engine import StoryEngine
 from storybot.domain.models import Choice, Node
@@ -67,8 +69,7 @@ def test_choice_from_other_user_is_rejected() -> None:
         ChoiceCustomIdPayload(session_id=session_id, turn=0, choice_id="choice_left")
     )
 
-
-    try:
+    with pytest.raises(InteractionRejectedError):
         handler.handle_choice_custom_id(
             context=StoryInteractionContext(
                 interaction_id="i2",
@@ -78,9 +79,6 @@ def test_choice_from_other_user_is_rejected() -> None:
             ),
             custom_id=encoded,
         )
-        assert False, "Expected InteractionRejectedError"
-    except InteractionRejectedError:
-        assert True
 
 
 def test_stale_turn_custom_id_is_rejected() -> None:
@@ -110,7 +108,7 @@ def test_stale_turn_custom_id_is_rejected() -> None:
     stale_custom_id = handler.custom_ids.encode_choice(
         ChoiceCustomIdPayload(session_id=session_id, turn=0, choice_id="choice_left")
     )
-    try:
+    with pytest.raises(InteractionRejectedError):
         handler.handle_choice_custom_id(
             context=StoryInteractionContext(
                 interaction_id="i3",
@@ -120,6 +118,3 @@ def test_stale_turn_custom_id_is_rejected() -> None:
             ),
             custom_id=stale_custom_id,
         )
-        assert False, "Expected InteractionRejectedError"
-    except InteractionRejectedError:
-        assert True

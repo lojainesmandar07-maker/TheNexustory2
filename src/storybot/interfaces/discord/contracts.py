@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class StoryInteractionContext:
     interaction_id: str
     user_id: str
@@ -11,30 +11,30 @@ class StoryInteractionContext:
     channel_id: str | None
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class StartStoryCommand:
     campaign_id: str
     entry_node_ref: str
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ContinueStoryCommand:
     session_id: str
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ChooseStoryOptionCommand:
     session_id: str
     choice_id: str
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DiscordChoiceView:
     custom_id: str
     label: str
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DiscordStoryView:
     title: str
     body: str

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from storybot.application.use_cases.story_runtime import StoryRuntime
 from storybot.domain.models import EngineStepResult
-from storybot.domain.session_service import SessionService
+from storybot.domain.session_service import SessionError, SessionService
 from storybot.interfaces.discord.contracts import (
     ChooseStoryOptionCommand,
     ContinueStoryCommand,
@@ -17,10 +17,10 @@ from storybot.interfaces.discord.custom_id import ChoiceCustomIdPayload, CustomI
 
 
 class InteractionRejectedError(RuntimeError):
-    pass
+    """Raised when a Discord interaction cannot be accepted safely."""
 
 
-@dataclass
+@dataclass(slots=True)
 class StoryDiscordHandler:
     runtime: StoryRuntime
     sessions: SessionService
@@ -44,9 +44,8 @@ class StoryDiscordHandler:
         context: StoryInteractionContext,
         command: ContinueStoryCommand,
     ) -> DiscordStoryView:
-        session = self.sessions.get_session(command.session_id)
-        self._ensure_ownership(context=context, owner_user_id=session.user_id)
-        latest, result = self.runtime.continue_active(command.session_id)
+        session = self._require_owned_session(context=context, session_id=command.session_id)
+        latest, result = self.runtime.continue_active(session.session_id)
         return self._to_view(result=result, session_id=latest.session_id, turn=latest.version)
 
     def handle_choice(
@@ -54,9 +53,8 @@ class StoryDiscordHandler:
         context: StoryInteractionContext,
         command: ChooseStoryOptionCommand,
     ) -> DiscordStoryView:
-        session = self.sessions.get_session(command.session_id)
-        self._ensure_ownership(context=context, owner_user_id=session.user_id)
-        latest, result = self.runtime.choose(command.session_id, command.choice_id)
+        session = self._require_owned_session(context=context, session_id=command.session_id)
+        latest, result = self.runtime.choose(session.session_id, command.choice_id)
         return self._to_view(result=result, session_id=latest.session_id, turn=latest.version)
 
     def handle_choice_custom_id(self, context: StoryInteractionContext, custom_id: str) -> DiscordStoryView:
@@ -65,10 +63,10 @@ class StoryDiscordHandler:
         except CustomIdError as exc:
             raise InteractionRejectedError("Invalid interaction payload") from exc
 
-        session = self.sessions.get_session(payload.session_id)
-        self._ensure_ownership(context=context, owner_user_id=session.user_id)
-        if payload.turn < session.version:
+        session = self._require_owned_session(context=context, session_id=payload.session_id)
+        if payload.turn != session.version:
             raise InteractionRejectedError("This choice is no longer valid. Use /story continue.")
+
         return self.handle_choice(
             context=context,
             command=ChooseStoryOptionCommand(session_id=payload.session_id, choice_id=payload.choice_id),
@@ -88,9 +86,11 @@ class StoryDiscordHandler:
             )
             for choice in result.available_choices
         )
+
         status_message = None
         if result.is_terminal:
             status_message = "Ending reached. Use /story restart to play again."
+
         return DiscordStoryView(
             title=result.title,
             body=result.body,
@@ -99,7 +99,12 @@ class StoryDiscordHandler:
             status_message=status_message,
         )
 
-    @staticmethod
-    def _ensure_ownership(context: StoryInteractionContext, owner_user_id: str) -> None:
-        if context.user_id != owner_user_id:
+    def _require_owned_session(self, context: StoryInteractionContext, session_id: str):
+        try:
+            session = self.sessions.get_session(session_id)
+        except SessionError as exc:
+            raise InteractionRejectedError("Session not found or unavailable.") from exc
+
+        if context.user_id != session.user_id:
             raise InteractionRejectedError("Only the owning player can interact with this session.")
+        return session

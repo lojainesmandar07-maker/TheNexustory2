@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Mapping
 
 from storybot.app.config import BotConfig
 from storybot.application.use_cases.story_runtime import StoryRuntime
 from storybot.domain.engine import StoryEngine
+from storybot.domain.models import Node
 from storybot.domain.session_service import SessionService
 from storybot.infrastructure.repositories.in_memory import (
     InMemoryContentRepository,
@@ -14,7 +16,7 @@ from storybot.interfaces.discord.custom_id import CustomIdCodec
 from storybot.interfaces.discord.handlers import StoryDiscordHandler
 
 
-@dataclass
+@dataclass(slots=True)
 class ApplicationContainer:
     config: BotConfig
     engine: StoryEngine
@@ -23,9 +25,9 @@ class ApplicationContainer:
     discord_handler: StoryDiscordHandler
 
 
-def build_application(nodes: dict) -> ApplicationContainer:
+def build_application(nodes: Mapping[str, Node]) -> ApplicationContainer:
     config = BotConfig.from_env()
-    content_repo = InMemoryContentRepository(nodes=nodes)
+    content_repo = InMemoryContentRepository(nodes=dict(nodes))
     session_repo = InMemorySessionRepository()
     engine = StoryEngine(content_repository=content_repo)
     session_service = SessionService(engine=engine, sessions=session_repo)

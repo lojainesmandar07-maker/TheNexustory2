@@ -1,3 +1,5 @@
+import pytest
+
 from storybot.interfaces.discord.custom_id import ChoiceCustomIdPayload, CustomIdCodec, CustomIdError
 
 
@@ -22,8 +24,14 @@ def test_custom_id_rejects_tampering() -> None:
     encoded = codec.encode_choice(ChoiceCustomIdPayload(session_id="s1", turn=1, choice_id="c1"))
     tampered = encoded.replace("choice:c1", "choice:c2")
 
-    try:
+    with pytest.raises(CustomIdError):
         codec.decode_choice(tampered)
-        assert False, "Expected CustomIdError"
-    except CustomIdError:
-        assert True
+
+
+def test_custom_id_rejects_invalid_turn_value() -> None:
+    codec = CustomIdCodec(signing_secret="secret")
+    encoded = codec.encode_choice(ChoiceCustomIdPayload(session_id="s1", turn=1, choice_id="c1"))
+    malformed = encoded.replace("turn:1", "turn:abc")
+
+    with pytest.raises(CustomIdError):
+        codec.decode_choice(malformed)

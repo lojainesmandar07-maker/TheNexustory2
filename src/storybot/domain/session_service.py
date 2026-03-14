@@ -9,7 +9,7 @@ from .models import EngineAction, SessionState, StorySession
 
 
 class SessionError(RuntimeError):
-    pass
+    """Raised for invalid session lifecycle operations."""
 
 
 class SessionService:
@@ -33,6 +33,9 @@ class SessionService:
 
     def continue_session(self, session_id: str) -> StorySession:
         session = self._require_session(session_id)
+        if session.state in (SessionState.CLOSED, SessionState.BROKEN):
+            raise SessionError(f"Session {session_id} is not resumable: {session.state}")
+
         result = self._engine.render_node(session.active_node_ref)
         session.state = SessionState.COMPLETED if result.is_terminal else SessionState.WAITING_INPUT
         session.updated_at = datetime.now(tz=timezone.utc)
@@ -41,8 +44,10 @@ class SessionService:
 
     def apply_choice(self, session_id: str, choice_id: str) -> StorySession:
         session = self._require_session(session_id)
-        if session.state in (SessionState.COMPLETED, SessionState.CLOSED, SessionState.BROKEN):
-            raise SessionError(f"Session {session_id} is not interactive: {session.state}")
+        if session.state != SessionState.WAITING_INPUT:
+            raise SessionError(
+                f"Session {session_id} cannot accept choices in state {session.state}. Expected WAITING_INPUT."
+            )
 
         session.state = SessionState.APPLYING_CHOICE
         session.updated_at = datetime.now(tz=timezone.utc)
@@ -60,7 +65,6 @@ class SessionService:
         session.updated_at = datetime.now(tz=timezone.utc)
         session.version += 1
         return self._sessions.save(session)
-
 
     def get_session(self, session_id: str) -> StorySession:
         return self._require_session(session_id)

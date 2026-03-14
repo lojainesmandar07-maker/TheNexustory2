@@ -4,7 +4,10 @@ from dataclasses import dataclass
 from os import getenv
 
 
-@dataclass(frozen=True)
+_ALLOWED_STARTUP_MODES = {"strict", "warn", "maintenance"}
+
+
+@dataclass(frozen=True, slots=True)
 class BotConfig:
     bot_token: str
     signing_secret: str
@@ -15,8 +18,12 @@ class BotConfig:
     def from_env(cls) -> "BotConfig":
         token = getenv("STORYBOT_TOKEN", "")
         signing_secret = getenv("STORYBOT_SIGNING_SECRET", token or "dev-secret")
-        startup_mode = getenv("STORYBOT_STARTUP_MODE", "strict")
-        default_campaign_id = getenv("STORYBOT_DEFAULT_CAMPAIGN", "main")
+        startup_mode = getenv("STORYBOT_STARTUP_MODE", "strict").strip().lower()
+        default_campaign_id = getenv("STORYBOT_DEFAULT_CAMPAIGN", "main").strip() or "main"
+
+        if startup_mode not in _ALLOWED_STARTUP_MODES:
+            startup_mode = "strict"
+
         return cls(
             bot_token=token,
             signing_secret=signing_secret,
