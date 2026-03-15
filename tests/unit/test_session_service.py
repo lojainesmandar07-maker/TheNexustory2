@@ -53,3 +53,14 @@ def test_apply_choice_rejects_when_not_waiting_for_input() -> None:
 
     with pytest.raises(SessionError):
         service.apply_choice(session_id=started.session_id, choice_id="choice_left")
+
+
+def test_invalid_choice_restores_waiting_input_state() -> None:
+    service = make_service()
+    started = service.start_session(user_id="u1", campaign_id="main", entry_node_ref="main.ch1.start")
+
+    with pytest.raises(SessionError):
+        service.apply_choice(session_id=started.session_id, choice_id="invalid")
+
+    current = service.get_session(started.session_id)
+    assert current.state == SessionState.WAITING_INPUT
