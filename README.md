@@ -1,3 +1,4 @@
+# README.md
 # TheNexustory2
 
 Architecture-first foundation for a production-grade Discord story bot.
@@ -25,20 +26,3 @@ If a file contains merge markers from GitHub (`<<<<<<<`, `=======`, `>>>>>>>`), 
 
 ```bash
 python scripts/dev/resolve_conflicts.py --strategy current README.md src/storybot/app/config.py
-```
-
-Available strategies: `current`, `incoming`, `both`.
-
-Quick PR conflict repair command:
-
-```bash
-python scripts/dev/fix_pr_conflicts.py --strategy current
-```
-
-If you are in an active merge/rebase with unmerged files, run:
-
-```bash
-python scripts/dev/merge_assistant.py --strategy current --continue
-```
-
-This resolves all currently unmerged files from `git status --porcelain`, stages them, runs conflict-marker checks, and continues merge/rebase when possible.

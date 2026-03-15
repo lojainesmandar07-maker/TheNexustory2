@@ -1,3 +1,4 @@
+# src/storybot/interfaces/discord/contracts.py
 from __future__ import annotations
 
 from dataclasses import dataclass
