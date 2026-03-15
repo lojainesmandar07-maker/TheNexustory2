@@ -15,3 +15,7 @@ Architecture-first foundation for a production-grade Discord story bot.
 - Add Postgres repositories and migrations.
 - Add content loader/validator pipeline.
 - Add admin/debug command surface.
+
+## Quality gates
+- Unit tests run via `pytest -q`.
+- A merge-conflict marker check (`python scripts/ci/check_merge_conflicts.py`) blocks unresolved conflict artifacts (`<<<<<<<`, `=======`, `>>>>>>>`) from landing in commits/PRs.
