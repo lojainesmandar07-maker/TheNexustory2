@@ -1,3 +1,6 @@
+# tests/unit/test_session_service.py
+import pytest
+
 from storybot.domain.engine import StoryEngine
 from storybot.domain.models import Choice, Node, SessionState
 from storybot.domain.session_service import SessionError, SessionService
@@ -40,8 +43,14 @@ def test_start_then_apply_choice_completes_session() -> None:
 def test_apply_choice_raises_for_missing_session() -> None:
     service = make_service()
 
-    try:
+    with pytest.raises(SessionError):
         service.apply_choice(session_id="does-not-exist", choice_id="choice_left")
-        assert False, "Expected SessionError"
-    except SessionError:
-        assert True
+
+
+def test_apply_choice_rejects_when_not_waiting_for_input() -> None:
+    service = make_service()
+    started = service.start_session(user_id="u1", campaign_id="main", entry_node_ref="main.ch1.start")
+    service.close_session(started.session_id)
+
+    with pytest.raises(SessionError):
+        service.apply_choice(session_id=started.session_id, choice_id="choice_left")

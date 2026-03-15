@@ -1,3 +1,6 @@
+# tests/unit/test_engine.py
+import pytest
+
 from storybot.domain.engine import EngineError, StoryEngine
 from storybot.domain.models import Choice, EngineAction, Node
 from storybot.infrastructure.repositories.in_memory import InMemoryContentRepository
@@ -35,11 +38,8 @@ def test_apply_choice_transitions_to_target_node() -> None:
 def test_apply_choice_raises_for_invalid_choice() -> None:
     engine = make_engine()
 
-    try:
+    with pytest.raises(EngineError):
         engine.apply_action(
             node_ref="main.ch1.start",
             action=EngineAction(action_type="select_choice", choice_id="missing"),
         )
-        assert False, "Expected EngineError"
-    except EngineError:
-        assert True
