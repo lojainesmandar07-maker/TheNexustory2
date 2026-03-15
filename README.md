@@ -28,3 +28,9 @@ python scripts/dev/resolve_conflicts.py --strategy current README.md src/storybo
 ```
 
 Available strategies: `current`, `incoming`, `both`.
+
+Quick PR conflict repair command:
+
+```bash
+python scripts/dev/fix_pr_conflicts.py --strategy current
+```
